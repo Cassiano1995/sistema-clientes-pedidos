@@ -6,7 +6,6 @@ from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
 def conectar():
     """
     Cria e retorna uma conexão com o banco de dados MySQL.
-    Se der erro, avisa o que aconteceu e retorna None.
     """
     try:
         conexao = mysql.connector.connect(

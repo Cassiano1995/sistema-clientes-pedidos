@@ -4,9 +4,8 @@ from mysql.connector import Error
 
 def inserir_pedido(id_cliente, id_produto, quantidade, status="pendente"):
     """
-    Cria um novo pedido com um único produto.
-    Faz 3 operações em sequência: insere o pedido, insere o item,
-    e atualiza o valor_total do pedido.
+    Cria um novo pedido com um único produto, calculando o valor total
+    a partir do preço atual do produto.
     """
     conexao = conectar()
     if conexao is None:
@@ -15,7 +14,6 @@ def inserir_pedido(id_cliente, id_produto, quantidade, status="pendente"):
     try:
         cursor = conexao.cursor()
 
-        # 1. Busca o preço atual do produto (pra guardar como preco_unitario)
         cursor.execute("SELECT preco FROM produtos WHERE id_produto = %s", (id_produto,))
         resultado = cursor.fetchone()
 
@@ -26,26 +24,24 @@ def inserir_pedido(id_cliente, id_produto, quantidade, status="pendente"):
         preco_unitario = resultado[0]
         valor_total = preco_unitario * quantidade
 
-        # 2. Insere o pedido (ainda sem o valor_total, ele é 0 por padrão)
         sql_pedido = """
             INSERT INTO pedidos (id_cliente, status, valor_total)
             VALUES (%s, %s, %s)
         """
         cursor.execute(sql_pedido, (id_cliente, status, valor_total))
-        id_pedido = cursor.lastrowid  # pega o ID do pedido recém-criado
+        id_pedido = cursor.lastrowid
 
-        # 3. Insere o item vinculado a esse pedido
         sql_item = """
             INSERT INTO itens_pedido (id_pedido, id_produto, quantidade, preco_unitario)
             VALUES (%s, %s, %s, %s)
         """
         cursor.execute(sql_item, (id_pedido, id_produto, quantidade, preco_unitario))
 
-        conexao.commit()  # só confirma tudo depois que as duas inserções deram certo
+        conexao.commit()
         print(f"Pedido {id_pedido} criado com sucesso! Valor total: R${valor_total:.2f}")
 
     except Error as erro:
-        conexao.rollback()  # desfaz tudo se algo deu errado no meio do processo
+        conexao.rollback()
         print(f"Erro ao criar pedido: {erro}")
 
     finally:
@@ -55,7 +51,7 @@ def inserir_pedido(id_cliente, id_produto, quantidade, status="pendente"):
 
 def listar_pedidos():
     """
-    Retorna todos os pedidos com detalhes do cliente e do produto (via JOIN).
+    Retorna todos os pedidos com detalhes do cliente e do produto.
     """
     conexao = conectar()
     if conexao is None:
@@ -89,7 +85,7 @@ def listar_pedidos():
 
 def atualizar_status_pedido(id_pedido, novo_status):
     """
-    Atualiza apenas o status de um pedido (ex: pendente -> enviado).
+    Atualiza apenas o status de um pedido.
     """
     conexao = conectar()
     if conexao is None:
@@ -117,8 +113,6 @@ def atualizar_status_pedido(id_pedido, novo_status):
 def deletar_pedido(id_pedido):
     """
     Remove um pedido e seus itens vinculados.
-    Precisa deletar de itens_pedido ANTES de deletar de pedidos,
-    por causa da FOREIGN KEY.
     """
     conexao = conectar()
     if conexao is None:
@@ -126,13 +120,8 @@ def deletar_pedido(id_pedido):
 
     try:
         cursor = conexao.cursor()
-
-        # 1. Deleta os itens do pedido primeiro
         cursor.execute("DELETE FROM itens_pedido WHERE id_pedido = %s", (id_pedido,))
-
-        # 2. Depois deleta o pedido em si
         cursor.execute("DELETE FROM pedidos WHERE id_pedido = %s", (id_pedido,))
-
         conexao.commit()
 
         if cursor.rowcount == 0:
@@ -149,9 +138,7 @@ def deletar_pedido(id_pedido):
         conexao.close()
 
 
-# Bloco de teste - só roda se você executar este arquivo diretamente
 if __name__ == "__main__":
-    # Cria um pedido: cliente ID 1 comprando produto ID 1, quantidade 2
     inserir_pedido(id_cliente=1, id_produto=1, quantidade=2)
 
     print("\nPedidos cadastrados:")

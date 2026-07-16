@@ -12,16 +12,13 @@ def inserir_produto(nome, descricao, preco, estoque):
 
     try:
         cursor = conexao.cursor()
-
         sql = """
             INSERT INTO produtos (nome, descricao, preco, estoque)
             VALUES (%s, %s, %s, %s)
         """
         valores = (nome, descricao, preco, estoque)
-
         cursor.execute(sql, valores)
         conexao.commit()
-
         print(f"Produto '{nome}' cadastrado com sucesso! (ID: {cursor.lastrowid})")
 
     except Error as erro:
@@ -66,14 +63,12 @@ def atualizar_produto(id_produto, nome, descricao, preco, estoque):
 
     try:
         cursor = conexao.cursor()
-
         sql = """
             UPDATE produtos
             SET nome = %s, descricao = %s, preco = %s, estoque = %s
             WHERE id_produto = %s
         """
         valores = (nome, descricao, preco, estoque, id_produto)
-
         cursor.execute(sql, valores)
         conexao.commit()
 
@@ -93,8 +88,7 @@ def atualizar_produto(id_produto, nome, descricao, preco, estoque):
 def deletar_produto(id_produto):
     """
     Remove um produto do banco, pelo id.
-    Se o produto estiver vinculado a algum item de pedido, o banco vai
-    bloquear a exclusão (por causa da FOREIGN KEY em itens_pedido).
+    Bloqueado automaticamente pelo banco se houver itens de pedido vinculados.
     """
     conexao = conectar()
     if conexao is None:
@@ -120,7 +114,6 @@ def deletar_produto(id_produto):
         conexao.close()
 
 
-# Bloco de teste - só roda se você executar este arquivo diretamente
 if __name__ == "__main__":
     inserir_produto("Teclado Mecânico", "Teclado gamer RGB", 250.00, 10)
     inserir_produto("Mouse Óptico", "Mouse sem fio 1600 DPI", 89.90, 25)
